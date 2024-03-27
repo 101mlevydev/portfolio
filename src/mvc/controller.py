@@ -1,3 +1,6 @@
+import ruamel.yaml
+import subprocess
+import yaml
 import docker
 from src.disko.sqlite import SQLiteCRUD
 from kubernetes import config
@@ -79,10 +82,20 @@ class ImageController:
 
 
     def copy_images(self, images, new_registry, tag, username, password):
-        for image_tuple in images:
-            image = image_tuple[0]  # Index 0 corresponds to the image name in the image_data tuple
-            image_name, image_tag = image.split(":")
-            self.transfer_image(image_name, new_registry, tag, username, password)
+        for image in images:
+            # Check if image is a tuple
+            if isinstance(image, tuple):
+                image_name = image[0]
+            else:
+                image_name = image
+
+            # Check if image_name contains a tag
+            if ":" in image_name:
+                image_name, image_tag = image_name.split(":")
+            else:
+                image_tag = tag
+
+            self.transfer_image(image_name, new_registry, image_tag, username, password)
             self.export_sha256(image_name, image_tag)
 
     def export_sha256(self, image_name, image_tag):
@@ -90,5 +103,96 @@ class ImageController:
         with open("sha256_hashes.txt", "a") as file:
             file.write(f"{image_name}:{image_tag} - SHA256: {sha256_hash}\n")
 
+    # Function for replacing an image in .values file
+    def replace_image(self, values_file_path, new_image):
+        yaml = ruamel.yaml.YAML()
+        yaml.indent(mapping=2, sequence=4, offset=2)
+
+        # Read the contents of the .values file
+        try:
+            with open(values_file_path, 'r') as file:
+                data = yaml.load(file)
+        except FileNotFoundError:
+            print(f"Error: File '{values_file_path}' not found.")
+            return
+
+        # Update the image name value
+        if 'app' in data and 'image' in data['app'] and 'name' in data['app']['image']:
+            data['app']['image']['name'] = new_image
+        else:
+            print("Error: Could not find 'app.image.name' in the YAML file.")
+            return
+
+        # Write the modified contents back to the file
+        try:
+            with open(values_file_path, 'w') as file:
+                yaml.dump(data, file)
+            print(f"Image name replaced successfully in '{values_file_path}'.")
+        except Exception as e:
+            print(f"Error occurred while writing to '{values_file_path}': {e}")
+
+
+    # Function for getting the current image name from a .values file
+    def get_current_image(self, values_file_path):
+                # Read the contents of the .values file
+        try:
+            with open(values_file_path, 'r') as file:
+                data = yaml.safe_load(file)
+        except FileNotFoundError:
+            print(f"Error: File '{values_file_path}' not found.")
+            return None
+
+        # Extract the current image name
+        if 'app' in data and 'image' in data['app'] and 'name' in data['app']['image']:
+            current_image_name = data['app']['image']['name']
+            print(f"Current image name in '{values_file_path}': {current_image_name}")
+            return [current_image_name]
+        else:
+            print("Error: Could not find 'app.image.name' in the YAML file.")
+            return None
+        
     
+    # Function for getting the release name from a Chart.yaml file
+    def get_release_name(self, chart_file_path):
+        # Read the contents of the Chart.yaml file
+        try:
+            with open(chart_file_path, 'r') as file:
+                data = yaml.safe_load(file)
+        except FileNotFoundError:
+            print(f"Error: File '{chart_file_path}' not found.")
+            return None
+
+        # Extract the release name
+        if 'name' in data:
+            release_name = data['name']
+            print(f"Release name: {release_name}")
+            return release_name
+        else:
+            print("Error: Could not find 'name' in the Chart.yaml file.")
+            return None
+
+
+    # Function for upgrading a Helm release
+    def helm_upgrade_release(self, release_name, chart_path):
+        try:
+            # Run the helm upgrade command
+            subprocess.run(
+                ["helm", "upgrade", release_name, chart_path],
+                check=True
+            )
+            print(f"Helm upgrade for release '{release_name}' successful.")
+        except subprocess.CalledProcessError as e:
+            print(f"Error occurred during helm upgrade: {e}")
+
+
+    # Function for Kubernetes cluster migration
+    def cluster_migration(self, registry, tag, username, password, helm_chart_path):
+        values_file_path = helm_chart_path + 'values.yaml'
+        chart_file_path = helm_chart_path + 'Chart.yaml'
+        release_name = self.get_release_name(chart_file_path)
+        current_image = self.get_current_image(values_file_path)
+        self.copy_images(current_image, registry, tag, username, password)
+        self.replace_image(values_file_path, registry)
+        self.helm_upgrade_release(release_name, helm_chart_path)
+
 
