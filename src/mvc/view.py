@@ -164,7 +164,7 @@ class ImageRegistryManager:
         registry_input_window.title("Registry Input")
         
         # Add label and entry for username and password for pulling registry
-        pull_label = ttk.Label(registry_input_window, text="Pulling Registry:")
+        pull_label = ttk.Label(registry_input_window, text="Source Registry:")
         pull_label.grid(row=0, column=0, padx=5, pady=5, sticky="w")
         pull_username_label = ttk.Label(registry_input_window, text="Username:")
         pull_username_label.grid(row=1, column=0, padx=5, pady=5, sticky="w")
@@ -176,7 +176,7 @@ class ImageRegistryManager:
         pull_password_entry.grid(row=2, column=1, padx=5, pady=5)
         
         # Add label and entry for username and password for pushing registry
-        push_url_label = ttk.Label(registry_input_window, text="Pushing Registry URL:")
+        push_url_label = ttk.Label(registry_input_window, text="Target Registry URL:")
         push_url_label.grid(row=3, column=0, padx=5, pady=5, sticky="w")
         push_url_entry = ttk.Entry(registry_input_window)
         push_url_entry.grid(row=3, column=1, padx=5, pady=5)
@@ -232,7 +232,7 @@ class ImageRegistryManager:
         frame.pack(padx=20, pady=20)
 
         # Add labels and entry fields for input variables
-        ttk.Label(frame, text="Registry:").grid(row=0, column=0, sticky="w", padx=5, pady=5)
+        ttk.Label(frame, text="Target Registry:").grid(row=0, column=0, sticky="w", padx=5, pady=5)
         entry_registry = ttk.Entry(frame)
         entry_registry.grid(row=0, column=1, padx=5, pady=5)
 
