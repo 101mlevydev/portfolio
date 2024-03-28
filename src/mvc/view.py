@@ -1,6 +1,6 @@
 import tkinter as tk
 import time
-from tkinter import ttk, messagebox
+from tkinter import ttk, filedialog, messagebox
 from src.disko.sqlite import SQLiteCRUD
 from src.mvc.controller import ImageController
 from src.disko.image_collector import ImageCollector
@@ -164,7 +164,7 @@ class ImageRegistryManager:
         registry_input_window.title("Registry Input")
         
         # Add label and entry for username and password for pulling registry
-        pull_label = ttk.Label(registry_input_window, text="Pulling Registry:")
+        pull_label = ttk.Label(registry_input_window, text="Source Registry:")
         pull_label.grid(row=0, column=0, padx=5, pady=5, sticky="w")
         pull_username_label = ttk.Label(registry_input_window, text="Username:")
         pull_username_label.grid(row=1, column=0, padx=5, pady=5, sticky="w")
@@ -176,7 +176,7 @@ class ImageRegistryManager:
         pull_password_entry.grid(row=2, column=1, padx=5, pady=5)
         
         # Add label and entry for username and password for pushing registry
-        push_url_label = ttk.Label(registry_input_window, text="Pushing Registry URL:")
+        push_url_label = ttk.Label(registry_input_window, text="Target Registry URL:")
         push_url_label.grid(row=3, column=0, padx=5, pady=5, sticky="w")
         push_url_entry = ttk.Entry(registry_input_window)
         push_url_entry.grid(row=3, column=1, padx=5, pady=5)
@@ -222,6 +222,88 @@ class ImageRegistryManager:
         time.sleep(20)
         self.root.destroy()  # Close the main window
 
+    def open_migration_window(self):
+        # Open a new window for entering migration details
+        migration_window = tk.Toplevel(self.root)
+        migration_window.title("Cluster Migration")
+
+        # Create a frame for layout
+        frame = ttk.Frame(migration_window)
+        frame.pack(padx=20, pady=20)
+
+        # Add labels and entry fields for input variables
+        ttk.Label(frame, text="Target Registry:").grid(row=0, column=0, sticky="w", padx=5, pady=5)
+        entry_registry = ttk.Entry(frame)
+        entry_registry.grid(row=0, column=1, padx=5, pady=5)
+
+        ttk.Label(frame, text="Tag:").grid(row=1, column=0, sticky="w", padx=5, pady=5)
+        entry_tag = ttk.Entry(frame)
+        entry_tag.grid(row=1, column=1, padx=5, pady=5)
+
+        ttk.Label(frame, text="Username:").grid(row=2, column=0, sticky="w", padx=5, pady=5)
+        entry_username = ttk.Entry(frame)
+        entry_username.grid(row=2, column=1, padx=5, pady=5)
+
+        ttk.Label(frame, text="Password:").grid(row=3, column=0, sticky="w", padx=5, pady=5)
+        entry_password = ttk.Entry(frame, show="*")
+        entry_password.grid(row=3, column=1, padx=5, pady=5)
+
+        # Function to handle submission of input variables
+        def submit_input():
+            registry = entry_registry.get()
+            tag = entry_tag.get()
+            username = entry_username.get()
+            password = entry_password.get()
+
+            if registry and tag and username and password:
+                try:
+                    selected_file = filedialog.askopenfilename(initialdir="/", title="Select Helm Chart")
+                    if selected_file:
+                        migration_window.destroy()
+                        self.controller.cluster_migration(registry, tag, username, password, selected_file)
+                except Exception as e:
+                    messagebox.showerror("Cluster Migration Error", f"An error occurred during cluster migration: {e}")
+            else:
+                messagebox.showerror("Input Error", "Please provide all required details.")
+
+        # Add submit button
+        ttk.Button(frame, text="Submit", command=submit_input).grid(row=4, columnspan=2, pady=10)
+
+    def export_sha256_window(self):
+        # Open a new window for SHA256 export input
+        export_window = tk.Toplevel(self.root)
+        export_window.title("Export SHA256")
+
+        # Create a frame for layout
+        frame = ttk.Frame(export_window)
+        frame.pack(padx=20, pady=20)
+
+        # Add labels and entry fields for input variables
+        ttk.Label(frame, text="Image Name:").grid(row=0, column=0, sticky="w", padx=5, pady=5)
+        entry_image_name = ttk.Entry(frame)
+        entry_image_name.grid(row=0, column=1, padx=5, pady=5)
+
+        ttk.Label(frame, text="Image Tag:").grid(row=1, column=0, sticky="w", padx=5, pady=5)
+        entry_image_tag = ttk.Entry(frame)
+        entry_image_tag.grid(row=1, column=1, padx=5, pady=5)
+
+        # Function to handle submission of input variables
+        def submit_input():
+            image_name = entry_image_name.get()
+            image_tag = entry_image_tag.get()
+
+            if image_name and image_tag:
+                try:
+                    self.controller.export_sha256(image_name, image_tag)
+                    messagebox.showinfo("Export SHA256", "SHA256 exported successfully.")
+                    export_window.destroy()
+                except Exception as e:
+                    messagebox.showerror("Export SHA256 Error", f"An error occurred during SHA256 export: {e}")
+            else:
+                messagebox.showerror("Input Error", "Please provide both image name and image tag.")
+
+        # Add submit button
+        ttk.Button(frame, text="Submit", command=submit_input).grid(row=2, columnspan=2, pady=10)
 
     def run(self):
         # Run the application
@@ -245,13 +327,17 @@ class ImageRegistryManager:
         # Add buttons for cluster selection, displaying data, and showing images table
         button_select_cluster = ttk.Button(self.root, text="Select Cluster", command=lambda: self.cluster_selection(cluster_names), style='Custom.TButton')
         button_select_cluster.pack(pady=10)
+
+        button_show_images_table = ttk.Button(self.root, text="Show Images Table", command=self.create_images_table_screen, style='Custom.TButton')
+        button_show_images_table.pack(pady=10)
         
         button_change_registry = ttk.Button(self.root, text="Change Registry", command=self.select_docker_images, style='Custom.TButton')
         button_change_registry.pack(pady=10)
 
-        button_export = ttk.Button(self.root, text="Export", command=self.select_docker_images, style='Custom.TButton')
+        button_export = ttk.Button(self.root, text="Export SHA256", command=self.export_sha256_window, style='Custom.TButton')
         button_export.pack(pady=10)
 
-        button_show_images_table = ttk.Button(self.root, text="Show Images Table", command=self.create_images_table_screen, style='Custom.TButton')
-        button_show_images_table.pack(pady=10)
+        button_migrate_clusters = ttk.Button(self.root, text="Migrate Clusters", command=self.open_migration_window)
+        button_migrate_clusters.pack(pady=10)
+        
         self.root.mainloop()  # Start the main event loop
