@@ -248,26 +248,29 @@ class ImageRegistryManager:
         entry_password = ttk.Entry(frame, show="*")
         entry_password.grid(row=3, column=1, padx=5, pady=5)
 
+        ttk.Label(frame, text="Helm Chart Path:").grid(row=4, column=0, sticky="w", padx=5, pady=5)
+        entry_file_path = ttk.Entry(frame)
+        entry_file_path.grid(row=4, column=1, padx=5, pady=5)
+
         # Function to handle submission of input variables
         def submit_input():
             registry = entry_registry.get()
             tag = entry_tag.get()
             username = entry_username.get()
             password = entry_password.get()
+            file_path = entry_file_path.get()
 
-            if registry and tag and username and password:
+            if registry and tag and username and password and file_path:
                 try:
-                    selected_file = filedialog.askopenfilename(initialdir="/", title="Select Helm Chart")
-                    if selected_file:
-                        migration_window.destroy()
-                        self.controller.cluster_migration(registry, tag, username, password, selected_file)
+                    migration_window.destroy()
+                    self.controller.cluster_migration(registry, tag, username, password, file_path)
                 except Exception as e:
                     messagebox.showerror("Cluster Migration Error", f"An error occurred during cluster migration: {e}")
             else:
                 messagebox.showerror("Input Error", "Please provide all required details.")
 
         # Add submit button
-        ttk.Button(frame, text="Submit", command=submit_input).grid(row=4, columnspan=2, pady=10)
+        ttk.Button(frame, text="Submit", command=submit_input).grid(row=5, columnspan=2, pady=10)
 
     def export_sha256_window(self):
         # Open a new window for SHA256 export input
