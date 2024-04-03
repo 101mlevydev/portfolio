@@ -1,2 +1,0 @@
-# Disko
-Disconnected Environment  Helper
