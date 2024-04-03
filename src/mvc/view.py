@@ -317,30 +317,24 @@ class ImageRegistryManager:
         self.treeview = ttk.Treeview(frame, columns=self.columns, show='headings', style='Custom.Treeview')
         for col in self.columns:
             self.treeview.heading(col, text=col)  # Set column headings
-
         self.treeview.pack(side='left', fill='both', expand=True)
 
         # Add scrollbar to the treeview
         scrollbar = ttk.Scrollbar(frame, orient='vertical', command=self.treeview.yview)
         scrollbar.pack(side='right', fill='y')
         self.treeview.configure(yscrollcommand=scrollbar.set)
-
         cluster_names = self.controller.get_kubernetes_clusters()
 
         # Add buttons for cluster selection, displaying data, and showing images table
         button_select_cluster = ttk.Button(self.root, text="Select Cluster", command=lambda: self.cluster_selection(cluster_names), style='Custom.TButton')
         button_select_cluster.pack(pady=10)
-
         button_show_images_table = ttk.Button(self.root, text="Show Images Table", command=self.create_images_table_screen, style='Custom.TButton')
         button_show_images_table.pack(pady=10)
-        
         button_change_registry = ttk.Button(self.root, text="Change Registry", command=self.select_docker_images, style='Custom.TButton')
         button_change_registry.pack(pady=10)
-
         button_export = ttk.Button(self.root, text="Export SHA256", command=self.export_sha256_window, style='Custom.TButton')
         button_export.pack(pady=10)
-
         button_migrate_clusters = ttk.Button(self.root, text="Migrate Clusters", command=self.open_migration_window)
         button_migrate_clusters.pack(pady=10)
-        
+    
         self.root.mainloop()  # Start the main event loop
