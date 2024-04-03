@@ -1,0 +1,4 @@
+__pycache__/
+image_data.db
+.venv/
+sha256_hashes.txt
